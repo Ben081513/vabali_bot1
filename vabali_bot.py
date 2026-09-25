@@ -9,8 +9,8 @@ import requests
 START_DATUM = "2026-09-27"
 END_DATUM = "2026-09-27"
 
-ZEIT_MIN = "08:00"
-ZEIT_MAX = "22:00"
+ZEIT_MIN = "10:00"
+ZEIT_MAX = "16:20"
 ANZAHL_PERSONEN = "2"
 
 # Dein ntfy-Topic
