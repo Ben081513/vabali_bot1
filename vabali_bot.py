@@ -9,12 +9,12 @@ import requests
 START_DATUM = "2026-09-27"
 END_DATUM = "2026-09-27"
 
-ZEIT_MIN = "08:00"
-ZEIT_MAX = "22:00"
+ZEIT_MIN = "10:00"
+ZEIT_MAX = "16:00"
 ANZAHL_PERSONEN = "2"
 
 # WICHTIG: Trage hier deinen ntfy-Namen ein
-NTFY_TOPIC = "DEIN_NTFY_NAME_HIER"
+NTFY_TOPIC = "vabali_bot"
 NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 
 # ==========================================
