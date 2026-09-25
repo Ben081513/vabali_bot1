@@ -10,7 +10,7 @@ START_DATUM = "2026-09-27"
 END_DATUM = "2026-09-27"
 
 ZEIT_MIN = "10:00"
-ZEIT_MAX = "16:00"
+ZEIT_MAX = "22:00"
 ANZAHL_PERSONEN = "2"
 
 # WICHTIG: Trage hier deinen ntfy-Namen ein
