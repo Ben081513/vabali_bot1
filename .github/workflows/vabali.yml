@@ -1,0 +1,25 @@
+name: Vabali Bot Checker
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"  # Läuft alle 15 Minuten
+  workflow_dispatch:          # Erlaubt den manuellen Start über den Button
+
+jobs:
+  check-vabali:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Abhängigkeiten installieren
+        run: pip install requests
+
+      - name: API Bot ausführen
+        run: python vabali_bot.py
