@@ -9,11 +9,11 @@ import requests
 START_DATUM = "2026-09-27"
 END_DATUM = "2026-09-27"
 
-ZEIT_MIN = "10:00"
+ZEIT_MIN = "08:00"
 ZEIT_MAX = "22:00"
 ANZAHL_PERSONEN = "2"
 
-# WICHTIG: Trage hier deinen ntfy-Namen ein
+# Dein ntfy-Topic
 NTFY_TOPIC = "vabali_bot"
 NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 
@@ -31,47 +31,46 @@ HEADERS = {
 
 
 def send_ntfy_notification(title, message, tags="bath"):
-    """Sendet eine Push-Benachrichtigung via ntfy.sh."""
+    """Sendet eine Push-Benachrichtigung via ntfy.sh (ohne Emoji im Header)."""
     if not NTFY_TOPIC or NTFY_TOPIC == "DEIN_NTFY_NAME_HIER":
         print("NTFY_TOPIC wurde nicht angepasst. Überspringe Benachrichtigung.")
         return
     try:
+        # Entfernt Emojis/Sonderzeichen aus dem Header, damit latin-1 nicht abstürzt
+        safe_title = title.encode('ascii', 'ignore').decode('ascii').strip()
+        if not safe_title:
+            safe_title = "Vabali Benachrichtigung"
+
         requests.post(
             NTFY_URL,
             data=message.encode("utf-8"),
-            headers={"Title": title, "Tags": tags, "Priority": "default"}
+            headers={"Title": safe_title, "Tags": tags, "Priority": "default"}
         )
     except Exception as e:
         print(f"Fehler beim Senden der ntfy-Nachricht: {e}")
 
 
 def get_session_data():
-    """Sucht aggressiv nach API-Key und Session-Key im gesamten Quelltext."""
     session = requests.Session()
     response = session.get(BASE_URL, headers=HEADERS)
 
     apikey = None
     key = None
 
-    # STRATEGIE 1: Suche direkt im HTML der Hauptseite nach den Keys
     ap_match = re.search(r'apikey=([a-zA-Z0-9]+)', response.text)
     k_match = re.search(r'key=([a-zA-Z0-9]+)', response.text)
     
     if ap_match: apikey = ap_match.group(1)
     if k_match: key = k_match.group(1)
 
-    # STRATEGIE 2: Suche nach einem beliebigen Sparkle-Link und folge ihm
     if not apikey or not key:
         sparkle_link = re.search(r'(https?://[^"\']*sparkle[^"\']*)', response.text)
         if sparkle_link:
             iframe_url = sparkle_link.group(1)
-            
-            # Prüfe, ob die Keys schon direkt im gefundenen Link stehen
             parsed = parse_qs(urlparse(iframe_url).query)
             if not apikey and 'apikey' in parsed: apikey = parsed['apikey'][0]
             if not key and 'key' in parsed: key = parsed['key'][0]
             
-            # Wenn immer noch nicht, lade den gefundenen Link herunter und suche dort
             if not apikey or not key:
                 iframe_res = session.get(iframe_url, headers=HEADERS)
                 ap_match_if = re.search(r'apikey=([a-zA-Z0-9]+)', iframe_res.text)
@@ -81,7 +80,7 @@ def get_session_data():
 
     if not apikey or not key:
         print(f"DEBUG HTML SNIPPET: {response.text[:500]}")
-        raise ValueError("Konnte API-Keys nicht finden. Entweder hat Vabali die Seite stark umgebaut oder einen Bot-Schutz (z.B. Cloudflare) aktiviert.")
+        raise ValueError("Konnte API-Keys nicht finden.")
         
     return session, apikey, key
 
@@ -141,8 +140,6 @@ def check_vabali():
             res = session.post(PROXY_URL, params=query_params, data=payload, headers=HEADERS)
             json_data = res.json()
             
-            print(f"DEBUG-ANTWORT: {json_data}")
-
             if json_data.get("success"):
                 raw_data = json_data.get("data", {})
                 uhrzeiten_raw = raw_data.get("uhrzeiten") or raw_data.get("slots") or raw_data.get("timeSlots") or []
@@ -173,7 +170,7 @@ def check_vabali():
             print(f"Fehler bei der Abfrage für Datum {date_str}: {e}")
 
     if found_slots:
-        title = "🎉 Vabali Plätze frei!"
+        title = "Vabali Plaetze frei!"
         lines = [f"Freie Slots für {ANZAHL_PERSONEN} Personen ({ZEIT_MIN} - {ZEIT_MAX} Uhr):\n"]
         for d, times in found_slots.items():
             lines.append(f"• {d}: {', '.join(times)}")
@@ -182,7 +179,7 @@ def check_vabali():
         print(msg)
         send_ntfy_notification(title, msg, tags="tada,bath")
     else:
-        title = "ℹ️ Vabali Checker: Keine Plätze"
+        title = "Vabali Checker: Keine Plaetze"
         msg = (f"Keine freien Plätze für {ANZAHL_PERSONEN} Personen "
                f"am {START_DATUM} zwischen {ZEIT_MIN} und {ZEIT_MAX} Uhr gefunden.")
         print(msg)
