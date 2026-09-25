@@ -4,14 +4,24 @@ from urllib.parse import urlparse, parse_qs
 import requests
 
 # ==========================================
-# FESTE KONFIGURATION (Hardcoded)
+# KONFIGURATION
 # ==========================================
+
+# OPTION 1: Für einen ganzen Zeitraum (von ... bis ...)
 START_DATUM = "2026-09-27"
 END_DATUM = "2026-09-27"
+
+# OPTION 2 (Alternativ): Wenn du gezielt einzelne, unterschiedliche Tage prüfen willst, 
+# kommentiere die Zeilen oben aus und aktiviere stattdessen diese Liste:
+# SPECIFIC_DATES = ["2026-09-27", "2026-10-03", "2026-10-15"]
 
 ZEIT_MIN = "10:00"
 ZEIT_MAX = "17:00"
 ANZAHL_PERSONEN = "2"
+
+# NEU: True = Benachrichtigung auch bei "Keine Plätze frei", 
+#      False = Benachrichtigung NUR bei erfolgreichen Treffern (empfohlen für Hintergrund-Checks)
+SEND_NO_SLOTS_NOTIFICATION = False
 
 # Dein ntfy-Topic
 NTFY_TOPIC = "vabali_bot"
@@ -36,7 +46,6 @@ def send_ntfy_notification(title, message, tags="bath"):
         print("NTFY_TOPIC wurde nicht angepasst. Überspringe Benachrichtigung.")
         return
     try:
-        # Entfernt Emojis/Sonderzeichen aus dem Header, damit latin-1 nicht abstürzt
         safe_title = title.encode('ascii', 'ignore').decode('ascii').strip()
         if not safe_title:
             safe_title = "Vabali Benachrichtigung"
@@ -108,12 +117,15 @@ def is_time_in_range(time_str, min_time, max_time):
 
 
 def check_vabali():
+    # Entweder den Zeitraum generieren oder die feste Liste nutzen
+    # dates_to_check = SPECIFIC_DATES  # Falls du stattdessen feste Tage nutzt
     dates_to_check = generate_date_range(START_DATUM, END_DATUM)
+    
     found_slots = {}
 
     try:
         session, dyn_apikey, dyn_key = get_session_data()
-        print(f"Erfolgreich autorisiert. (Key: {dyn_key[:5]}...)")
+        print(f"Erfolgreich autorisiert. Überprüfe Tage: {dates_to_check}")
     except Exception as e:
         err_msg = f"Fehler bei der Vabali-Verbindung: {e}"
         print(err_msg)
@@ -181,9 +193,14 @@ def check_vabali():
     else:
         title = "Vabali Checker: Keine Plaetze"
         msg = (f"Keine freien Plätze für {ANZAHL_PERSONEN} Personen "
-               f"am {START_DATUM} zwischen {ZEIT_MIN} und {ZEIT_MAX} Uhr gefunden.")
+               f"im Zeitraum {START_DATUM} bis {END_DATUM} zwischen {ZEIT_MIN} und {ZEIT_MAX} Uhr gefunden.")
         print(msg)
-        send_ntfy_notification(title, msg, tags="x,bath")
+        
+        # Nur senden, wenn die Option in der Konfiguration auf True steht
+        if SEND_NO_SLOTS_NOTIFICATION:
+            send_ntfy_notification(title, msg, tags="x,bath")
+        else:
+            print("Keine freien Plätze gefunden. Benachrichtigung wurde unterdrückt (SEND_NO_SLOTS_NOTIFICATION = False).")
 
 
 if __name__ == "__main__":
