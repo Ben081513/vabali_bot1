@@ -2,7 +2,7 @@ name: Vabali Bot Checker
 
 on:
   schedule:
-    - cron: "*/15 * * * *"  # Läuft alle 15 Minuten
+    - cron: "*/10 * * * *"  # Läuft alle 10 Minuten
   workflow_dispatch:          # Erlaubt den manuellen Start über den Button
 
 jobs:
